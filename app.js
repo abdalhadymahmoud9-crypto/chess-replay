@@ -93,7 +93,7 @@ function why() {
   if (!evals || !ply) { el.innerHTML = evals ? '<p class="mute small">Pick a move to see the engine\'s view.</p>' : ""; return; }
   const lb = evals.labels[ply], prev = game.positions[ply - 1].state, e = evals.ev[ply], bu = evals.best[ply - 1];
   let alt = "";
-  if (bu && !lb.key.match(/top|mate/)) { const bm = legalMoves(prev).find((m) => toUCI(m) === bu); if (bm) alt = ` The engine preferred <b>${toSAN(prev, bm)}</b> here.`; }
+  if (bu && !lb.key.match(/top|great|mate/)) { const bm = legalMoves(prev).find((m) => toUCI(m) === bu); if (bm) alt = ` The engine preferred <b>${toSAN(prev, bm)}</b> here.`; }
   const sc = e.mate === 0 ? "Checkmate" : show(e, game.positions[ply].state.turn);
   let ex = "";
   if (!lb.key.match(/mate/) || true) {
@@ -102,7 +102,7 @@ function why() {
     const capOf = (state, m) => (m && state.board[m.to] ? state.board[m.to] : "");
     ex = `<p dir="rtl" lang="ar" class="ar">${explainAr({ lb, loss: lb.loss, swing: lb.swing || 0, evBefore: evals.ev[ply - 1], evAfter: e, bestSan: bm && !lb.key.match(/top|great|mate/) ? toSAN(prev, bm) : "", replySan: rm && !lb.key.match(/top|great|mate|exc|good/) ? toSAN(st, rm) : "", replyCaptures: capOf(st, rm), moveCaptures: capOf(prev, mv) })}</p>`;
   }
-  el.innerHTML = ex + `<p><span class="tag t-${lb.key}">${lb.text}</span> ${game.sans[ply - 1]}. Evaluation after the move: <b>${sc}</b> (White's view${e.depth ? `, depth ${e.depth}` : ""}).${alt}${lb.key === "top" || lb.key === "mate" ? "" : ` Estimated loss about ${(lb.loss / 100).toFixed(2)} pawns.`}</p>`;
+  el.innerHTML = ex + `<p><span class="tag t-${lb.key}">${lb.text}</span> ${game.sans[ply - 1]}. Evaluation after the move: <b>${sc}</b> (White's view${e.depth ? `, depth ${e.depth}` : ""}).${alt}${lb.key === "top" || lb.key === "great" || lb.key === "mate" ? "" : ` Estimated loss about ${(lb.loss / 100).toFixed(2)} pawns.`}</p>`;
 }
 
 // ---- play ----
