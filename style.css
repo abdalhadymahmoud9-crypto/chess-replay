@@ -102,3 +102,4 @@ textarea{border-radius:10px}
 }
 .offnote{flex-basis:100%;font-size:.78rem;color:var(--mute,#6b7280);line-height:1.4}
 .t-brill{background:#bfe3ee;color:#0b3b4a}#moves button.m-brill{box-shadow:inset 0 -3px #1a8fb0}
+[data-a]{white-space:nowrap;flex:none}
