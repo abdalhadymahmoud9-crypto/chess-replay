@@ -50,10 +50,17 @@ function render() {
     bar.classList.toggle("off", !e); bar.classList.toggle("flip", flipped);
     if (e) {
       const t = state.turn, cp = e.mate !== undefined ? (e.mate === 0 ? (t === "w" ? -1 : 1) * 1500 : (t === "w" ? 1 : -1) * Math.sign(e.mate) * 1500) : (t === "w" ? 1 : -1) * Math.max(-1500, Math.min(1500, e.cp));
-      $("#evalfill").style.height = (100 / (1 + Math.exp(-cp / 320))).toFixed(1) + "%";
+      $("#evalfill").style.height = (100 / (1 + Math.exp(-cp / 220))).toFixed(1) + "%";
       $("#evaltxt").textContent = e.mate === 0 ? "#" : show(e, t).replace("White mates in ", "M").replace("Black mates in ", "-M").replace(/^\+/, "");
       bar.dataset.score = show(e, t); bar.setAttribute("aria-label", "Evaluation " + show(e, t) + " (White's view)");
-    } else { $("#evalfill").style.height = "50%"; $("#evaltxt").textContent = ""; bar.setAttribute("aria-label", "Evaluation bar, analyze the game to fill it"); }
+    } else { // not analyzed: show a plain material count (pawns), clearly not an engine score
+      const V = { p: 1, n: 3, b: 3, r: 5, q: 9 }; let m = 0;
+      for (const c of state.board) if (c) m += (c === c.toUpperCase() ? 1 : -1) * (V[c.toLowerCase()] || 0);
+      $("#evalfill").style.height = (100 / (1 + Math.exp(-m / 3))).toFixed(1) + "%";
+      $("#evaltxt").textContent = m === 0 ? "=" : (m > 0 ? "+" : "") + m;
+      bar.dataset.score = ""; bar.setAttribute("aria-label", "Material balance " + (m > 0 ? "+" : "") + m + " (White's view). Analyze the game for the engine score");
+    }
+    bar.title = e ? "Engine evaluation (White's view)" : "Material count only. Press Analyze for the engine score.";
   }
   document.querySelectorAll("#moves button").forEach((b) => b.classList.toggle("cur", Number(b.dataset.ply) === ply));
   const c = $("#moves .cur"); if (c) c.scrollIntoView({ block: "nearest" });
