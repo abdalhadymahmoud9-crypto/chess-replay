@@ -56,3 +56,5 @@ details{margin-top:24px}summary{cursor:pointer;color:var(--acc);min-height:44px;
 footer{margin-top:32px;color:var(--mute);font-size:.82rem}footer a{color:var(--acc)}
 .syncbar{font-size:.85rem}
 .syncbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;color:var(--mute)}.syncbar p{margin:0}.auth{display:flex;align-items:center;gap:8px}.auth button{min-height:36px;padding:4px 12px;font-size:.85rem}.auth img{width:24px;height:24px;border-radius:50%}
+#board .sq{border-radius:0;min-height:0;min-width:0;padding:0;border:0;overflow:hidden}
+#board{max-width:min(100%,620px)}
