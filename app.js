@@ -36,11 +36,13 @@ function render() {
   const legal = mode !== "review" && ply === game.sans.length ? legalMoves(state) : [];
   const dests = sel !== null ? legal.filter((m) => m.from === sel).map((m) => m.to) : [];
   let html = "";
+  const BADGE = { brill: ["!!", "Brilliant"], great: ["!", "Great"], top: ["\u2605", "Best"], exc: ["\u2713", "Excellent"], good: ["\u2713", "Good"], inacc: ["?!", "Inaccuracy"], mist: ["?", "Mistake"], blun: ["??", "Blunder"], mate: ["#", "Checkmate"] };
+  const cur = evals && ply > 0 && move ? evals.labels[ply] : null, bd = cur && BADGE[cur.key];
   for (let k = 0; k < 64; k++) {
     const i = flipped ? 63 - k : k, p = state.board[i], light = (Math.floor(i / 8) + i) % 2 === 0;
     const cls = ["sq", light ? "l" : "d", move && (i === move.from || i === move.to) ? "hl" : "", i === sel ? "sel" : "", dests.includes(i) ? (p ? "cap" : "dot") : ""].join(" ");
     const col = k % 8 === 0 ? `<b class="r">${8 - Math.floor(i / 8)}</b>` : "", fl = k >= 56 ? `<b class="f">${name(i)[0]}</b>` : "";
-    html += `<button class="${cls}" data-sq="${i}" aria-label="${name(i)}${p ? " " + p : ""}">${col}${fl}${p ? svg(p) : ""}</button>`;
+    html += `<button class="${cls}" data-sq="${i}" aria-label="${name(i)}${p ? " " + p : ""}${bd && move && i === move.to ? ", " + bd[1] + " move" : ""}">${col}${fl}${p ? svg(p) : ""}${bd && move && i === move.to ? `<span class="badge bg-${cur.key}" aria-hidden="true">${bd[0]}</span>` : ""}</button>`;
   }
   $("#board").innerHTML = html;
   document.querySelectorAll("#moves button").forEach((b) => b.classList.toggle("cur", Number(b.dataset.ply) === ply));
