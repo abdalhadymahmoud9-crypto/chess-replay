@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chess Replay</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <header><h1 id="title"></h1><p id="sub"></p></header>
+  <div class="layout">
+    <section>
+      <div id="board" aria-label="Chess board"></div>
+      <div class="controls">
+        <button id="first" aria-label="Start">⏮</button><button id="prev" aria-label="Previous">◀</button>
+        <span id="counter"></span>
+        <button id="next" aria-label="Next">▶</button><button id="last" aria-label="End">⏭</button>
+      </div>
+    </section>
+    <section class="side">
+      <h2>Moves</h2>
+      <div id="moves"></div>
+      <h2 id="note-label">Notes</h2>
+      <textarea id="note" rows="4" placeholder="Why was this move played? What would you do?"></textarea>
+      <small id="saved"></small>
+    </section>
+  </div>
+  <details>
+    <summary>Load your own game (PGN)</summary>
+    <textarea id="pgn" rows="6" placeholder="Paste a PGN here"></textarea>
+    <div class="row"><button id="load">Load</button><button id="sample" class="ghost">Back to sample</button></div>
+    <p id="pgn-err" class="err"></p>
+  </details>
+</main>
+<script type="module" src="app.js"></script>
+</body></html>
