@@ -37,3 +37,18 @@ test("illegal move throws", () => {
   assert.throws(() => replay("1. e5"), /Illegal/);
   assert.throws(() => replay("1. e4 e5 2. Ke3"), /Illegal/);
 });
+
+import { moveLoss, label, show } from "./analysis.js";
+import { gameStatus, toFEN, fromFEN as ff, START_FEN as SF, toUCI } from "./engine.js";
+test("loss: mate missed is a blunder, mover view", () => {
+  assert.ok(moveLoss({ mate: 2 }, { cp: 50 }) > 200); // had mate in 2, opponent (stm) now sees +50 for themselves
+  assert.equal(moveLoss({ cp: 30 }, { cp: -30 }), 0);
+  assert.equal(label(0, false, false).key, "good");
+  assert.equal(show({ mate: 3 }, "b"), "Black mates in 3");
+});
+test("status: stalemate, insufficient material, FEN round trip", () => {
+  const st = ff("7k/5Q2/6K1/8/8/8/8/8 b - -");
+  assert.equal(gameStatus([{ state: st, move: null }]).reason, "Stalemate");
+  assert.equal(gameStatus([{ state: ff("8/8/8/4k3/8/8/3K4/8 w - -"), move: null }]).reason, "Insufficient material");
+  assert.equal(toFEN(ff(SF)).split(" ")[0], SF.split(" ")[0]);
+});
