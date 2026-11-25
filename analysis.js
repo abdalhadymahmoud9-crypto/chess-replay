@@ -79,6 +79,6 @@ export function explainAr(info) {
     if (bestSan) p.push(`المحرك كان يفضّل ${L(bestSan)}.`);
     if (replySan) p.push(`أقوى رد للخصم بعد نقلتك: ${L(replySan)}${replyCaptures ? ` وبيأخد ${pieceAr(replyCaptures)} عندك` : ""}.`);
   }
-  if (lb.key === "top" || lb.key === "exc" || lb.key === "good" || lb.key === "great" || lb.key === "brill") p.push(`التقييم بعدها ${after}.`);
+  if (lb.key === "top" || lb.key === "exc" || lb.key === "good" || lb.key === "great") p.push(`التقييم بعدها ${after}.`);
   return p.join(" ");
 }
