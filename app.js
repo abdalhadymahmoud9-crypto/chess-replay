@@ -31,6 +31,20 @@ function buildMoves() {
     return `${i % 2 === 0 ? `<span class="n">${i / 2 + 1}.</span>` : ""}<button data-ply="${i + 1}" class="${lb ? "m-" + lb.key : ""}">${s}</button>`;
   }).join("") || '<span class="mute">No moves yet</span>';
 }
+const LIVE_DEPTH = 10;
+const live = { on: false, token: 0, cache: new Map() };
+// Opt-in live evaluation for Friend/Computer. Stale results are dropped: only the newest request for the position on screen is kept.
+function liveEval() {
+  if (!live.on || mode === "review" || !SF.isLoaded()) return;
+  const st = game.positions[ply].state, fen = toFEN(st);
+  if (live.cache.has(fen) || (mode === "cpu" && busy)) return;
+  const my = ++live.token;
+  if (!legalMoves(st).length) { live.cache.set(fen, gameStatus(game.positions.slice(0, ply + 1)).reason === "Checkmate" ? { mate: 0, depth: 0 } : { cp: 0, depth: 0 }); render(); return; }
+  SF.search(fen, { depth: LIVE_DEPTH }).then((r) => {
+    live.cache.set(fen, r);
+    if (my === live.token && live.on && mode !== "review" && toFEN(game.positions[ply].state) === fen) render();
+  }).catch(() => {});
+}
 function render() {
   const { state, move } = game.positions[ply];
   const legal = mode !== "review" && ply === game.sans.length ? legalMoves(state) : [];
@@ -46,7 +60,7 @@ function render() {
   }
   $("#board").innerHTML = html;
   { // evaluation bar: White's share of the bar from the engine score at this position (only after Analyze)
-    const bar = $("#evalbar"), e = evals && evals.ev[ply];
+    const bar = $("#evalbar"), e = mode === "review" ? (evals && evals.ev[ply]) : live.cache.get(toFEN(state));
     bar.classList.toggle("off", !e); bar.classList.toggle("flip", flipped);
     if (e) {
       const t = state.turn, cp = e.mate !== undefined ? (e.mate === 0 ? (t === "w" ? -1 : 1) * 1500 : (t === "w" ? 1 : -1) * Math.sign(e.mate) * 1500) : (t === "w" ? 1 : -1) * Math.max(-1500, Math.min(1500, e.cp));
@@ -60,14 +74,17 @@ function render() {
       $("#evaltxt").textContent = m === 0 ? "=" : (m > 0 ? "+" : "") + m;
       bar.dataset.score = ""; bar.setAttribute("aria-label", "Material balance " + (m > 0 ? "+" : "") + m + " (White's view). Analyze the game for the engine score");
     }
-    { const em = $("#evalmode"); em.className = e ? "eng" : "mat";
-      em.innerHTML = e ? `<b>Engine evaluation</b> <bdi dir="rtl">تقييم المحرك</bdi>` : `<b>Material only</b> <bdi dir="rtl">عدد القطع فقط</bdi> <span>${mode === "review" ? `Not an engine score. Press Analyze (right) for the real evaluation. <bdi dir="rtl">اضغط Analyze للتقييم الحقيقي</bdi>` : `Not an engine score. For the real evaluation: save this game, open it in Review, then press Analyze. <bdi dir="rtl">احفظ اللعبة وافتحها في Review ثم اضغط Analyze</bdi>`}</span>`; }
+    { const em = $("#evalmode"), play = mode !== "review", pend = play && live.on && !e;
+      em.className = e ? "eng" : pend ? "wait" : "mat";
+      const btn = play ? `<button id="liveToggle" type="button">${live.on ? "Turn off live evaluation" : SF.isLoaded() ? "Turn on live evaluation" : `Turn on live evaluation (downloads Stockfish, ${SF.sizeText()})`}</button>` : "";
+      em.innerHTML = (e ? `<b>Engine evaluation${play ? " (live, depth " + LIVE_DEPTH + ")" : ""}</b> <bdi dir="rtl">تقييم المحرك</bdi>` : pend ? `<b>Evaluating…</b> <bdi dir="rtl">جاري التقييم</bdi>` : `<b>Material only</b> <bdi dir="rtl">عدد القطع فقط</bdi> <span>${play ? "Not an engine score. Turn on live evaluation for the engine score (you choose the download). <bdi dir=\"rtl\">فعّل التقييم المباشر للحصول على تقييم المحرك</bdi>" : "Not an engine score. Press Analyze (right) for the real evaluation. <bdi dir=\"rtl\">اضغط Analyze للتقييم الحقيقي</bdi>"}</span>`) + btn; }
     bar.title = e ? "Engine evaluation (White's view)" : "Material count only. Press Analyze for the engine score.";
   }
   document.querySelectorAll("#moves button").forEach((b) => b.classList.toggle("cur", Number(b.dataset.ply) === ply));
   const c = $("#moves .cur"); if (c) c.scrollIntoView({ block: "nearest" });
   $("#counter").textContent = `${ply} / ${game.sans.length}`;
   $("#status").textContent = status();
+  liveEval();
   $("#note-label").textContent = ply ? `Note for move ${Math.ceil(ply / 2)}${ply % 2 ? "" : "..."} ${game.sans[ply - 1]}` : "Start position";
   $("#note").disabled = !ply; $("#note").value = ply ? (notes[key] || {})[ply] || "" : "";
   engbox(); why();
@@ -245,3 +262,11 @@ $("#games").onclick = (e) => {
 };
 window.__chess = { get game() { return game; } };
 games(); setMode("review");
+
+$("#evalmode").addEventListener("click", async (e) => {
+  if (!e.target.closest("#liveToggle")) return;
+  if (live.on) { live.on = false; live.token++; render(); return; }
+  const b = e.target.closest("#liveToggle"); b.disabled = true; b.textContent = SF.isLoaded() ? "Starting…" : "Downloading Stockfish…";
+  try { await SF.load(); live.on = true; } catch (err) { b.textContent = err.message; return; }
+  render();
+});
