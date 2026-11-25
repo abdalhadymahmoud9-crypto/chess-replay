@@ -28,11 +28,12 @@ export function show(s, turn) {
 // ---- Arabic explanation, built only from engine numbers and legal-move facts ----
 const PIECE_AR = { p: "بيدق", n: "حصان", b: "فيل", r: "طابية", q: "وزير", k: "ملك" };
 export const pieceAr = (c) => PIECE_AR[String(c).toLowerCase()] || "";
+const L = (x) => `<bdi dir="ltr">${x}</bdi>`; // keeps signs, digits and SAN in left-to-right order inside Arabic text
 const ar = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 // s is a score from the side to move's view; sign=+1 when that side is the mover, -1 otherwise. Output is from the mover's view.
 export function scoreAr(s, sign) {
   if (s.mate !== undefined) { const m = s.mate * sign; return m === 0 ? "مات" : m > 0 ? `مات لصالحك في ${ar(Math.abs(m))}` : `مات ضدك في ${ar(Math.abs(m))}`; }
-  const v = (s.cp * sign) / 100; return "\u2066" + (v > 0 ? "+" : v < 0 ? "-" : "") + Math.abs(v).toFixed(2) + "\u2069";
+  const v = (s.cp * sign) / 100; return L((v > 0 ? "+" : v < 0 ? "\u2212" : "") + Math.abs(v).toFixed(2));
 }
 // info: { lb, loss, evBefore, evAfter, bestSan, replySan, replyCaptures (piece char or ""), moveCaptures (piece char or ""), swing }
 export function explainAr(info) {
@@ -48,8 +49,8 @@ export function explainAr(info) {
     p.push(`${name}: التقييم من وجهة نظرك نزل من ${scoreAr(evBefore, 1)} (مع أفضل لعب) إلى ${after} بعد نقلتك، يعني خسارة حوالي ${ar((loss / 100).toFixed(2))} بيدق${cap}.`);
     if (evBefore.mate !== undefined && evBefore.mate > 0 && !(evAfter.mate !== undefined && -evAfter.mate > 0)) p.push(`كان عندك مات إجباري وضاع.`);
     if (evAfter.mate !== undefined && evAfter.mate > 0) p.push(`النقلة دي بتسمح للخصم بمات.`);
-    if (bestSan) p.push(`المحرك كان يفضّل ${bestSan}.`);
-    if (replySan) p.push(`أقوى رد للخصم بعد نقلتك: ${replySan}${replyCaptures ? ` وبيأخد ${pieceAr(replyCaptures)} عندك` : ""}.`);
+    if (bestSan) p.push(`المحرك كان يفضّل ${L(bestSan)}.`);
+    if (replySan) p.push(`أقوى رد للخصم بعد نقلتك: ${L(replySan)}${replyCaptures ? ` وبيأخد ${pieceAr(replyCaptures)} عندك` : ""}.`);
   }
   if (lb.key === "top" || lb.key === "exc" || lb.key === "good" || lb.key === "great") p.push(`التقييم بعدها ${after}.`);
   return p.join(" ");
