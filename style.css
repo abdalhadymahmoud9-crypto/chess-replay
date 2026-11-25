@@ -100,3 +100,4 @@ textarea{border-radius:10px}
   #boardwrap{margin:0}#board{border-radius:0;max-width:100%;box-shadow:none}
   .layout{gap:14px}
 }
+.offnote{flex-basis:100%;font-size:.78rem;color:var(--mute,#6b7280);line-height:1.4}
