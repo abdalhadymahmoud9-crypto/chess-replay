@@ -182,3 +182,37 @@ export function replay(pgnText) {
   }
   return { headers, positions, sans };
 }
+
+// ---- additions for play, FEN export and engine talk ----
+export const toUCI = (m) => name(m.from) + name(m.to) + (m.promo ? m.promo.toLowerCase() : "");
+export function toFEN(st) {
+  let out = [];
+  for (let r = 0; r < 8; r++) {
+    let row = "", empty = 0;
+    for (let c = 0; c < 8; c++) { const p = st.board[r * 8 + c]; if (!p) empty++; else { if (empty) row += empty; empty = 0; row += p; } }
+    if (empty) row += empty; out.push(row);
+  }
+  return `${out.join("/")} ${st.turn} ${st.castle || "-"} ${st.ep >= 0 ? name(st.ep) : "-"} 0 1`;
+}
+export const positionKey = (st) => `${st.board.join("|")} ${st.turn} ${st.castle} ${st.ep}`;
+export function insufficientMaterial(board) {
+  const pcs = board.filter(Boolean).map((p) => p.toUpperCase()).filter((p) => p !== "K");
+  if (!pcs.length) return true;
+  if (pcs.length === 1 && (pcs[0] === "B" || pcs[0] === "N")) return true;
+  if (pcs.every((p) => p === "B")) { // only bishops, all on one colour
+    const sq = board.map((p, i) => [p, i]).filter(([p]) => p && p.toUpperCase() === "B").map(([, i]) => (Math.floor(i / 8) + i) % 2);
+    return sq.every((c) => c === sq[0]);
+  }
+  return false;
+}
+// positions: array of {state, move}; returns {over, result, reason} for the last position.
+export function gameStatus(positions) {
+  const st = positions[positions.length - 1].state, legal = legalMoves(st);
+  if (!legal.length) return inCheck(st) ? { over: true, result: st.turn === "w" ? "0-1" : "1-0", reason: "Checkmate" } : { over: true, result: "1/2-1/2", reason: "Stalemate" };
+  if (insufficientMaterial(st.board)) return { over: true, result: "1/2-1/2", reason: "Insufficient material" };
+  const k = positionKey(st); if (positions.filter((p) => positionKey(p.state) === k).length >= 3) return { over: true, result: "1/2-1/2", reason: "Threefold repetition" };
+  let clock = 0; // moves since last pawn move or capture, counted from the first position we know
+  for (let i = positions.length - 1; i > 0; i--) { const m = positions[i].move, p = positions[i - 1].state.board[m.from]; if (m.capture || p.toUpperCase() === "P") break; clock++; }
+  if (clock >= 100) return { over: true, result: "1/2-1/2", reason: "Fifty-move rule" };
+  return { over: false, check: inCheck(st) };
+}
