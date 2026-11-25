@@ -10,7 +10,7 @@ const read = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } 
 let notes = read(NOTES);
 let mode = "review", game, ply = 0, key = "", sel = null, flipped = false, pending = null, busy = false;
 let evals = null; // analysis of the current game, or null
-const DEPTH = 12;
+const DEPTH = 12, DEEP = 18;
 
 const hash = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0; return String(h); };
 const fresh = () => ({ headers: {}, positions: [{ state: fromFEN(START_FEN), move: null }], sans: [] });
@@ -58,7 +58,7 @@ function engbox() {
   const el = $("#engbox"); if (el.dataset.lock) return;
   if (mode === "friend") { el.innerHTML = ""; return; }
   if (mode === "cpu" && !SF.isLoaded()) return; // the download prompt is shown by setMode
-  el.innerHTML = `<button id="an" ${busy || game.sans.length < 1 ? "disabled" : ""}>${evals ? "Analyze again" : "Analyze game"}${SF.isLoaded() ? "" : ` (downloads Stockfish, ${SF.sizeText()})`}</button><p class="mute small">Stockfish 19 lite, depth ${DEPTH}. Labels are a rough guide from the engine's score, not a verdict.</p>`;
+  el.innerHTML = `<button id="an" ${busy || game.sans.length < 1 ? "disabled" : ""}>${evals ? "Analyze again" : "Analyze game"}${SF.isLoaded() ? "" : ` (downloads Stockfish, ${SF.sizeText()})`}</button><p class="mute small">Stockfish 19 lite, depth ${DEPTH} (suspected errors re-checked at depth ${DEEP}). Labels are a rough guide from the engine's score, not a verdict.</p>`;
 }
 async function ensure(btnText) {
   if (SF.isLoaded()) return true;
@@ -78,15 +78,31 @@ async function analyze() {
     if (!legal.length) { ev[i] = gameStatus(game.positions.slice(0, i + 1)).reason === "Checkmate" ? { mate: 0, depth: 0 } : { cp: 0, depth: 0 }; best[i] = null; continue; }
     const r = await SF.search(toFEN(st), { depth: DEPTH }); ev[i] = r; best[i] = r.best;
   }
-  const labels = [];
-  for (let i = 1; i < n; i++) {
-    const m = game.positions[i].move, isTop = toUCI(m) === best[i - 1];
-    const mated = ev[i].mate === 0;
-    const loss = mated ? 0 : moveLoss(ev[i - 1], ev[i]);
-    const mateFor = ev[i - 1].mate !== undefined && ev[i - 1].mate > 0;
-    const sac = mated ? 0 : sacrificeCp(game.positions[i - 1].state, m), brill = !mated && isBrilliant({ loss, isTop, sac, evBefore: ev[i - 1], evAfter: ev[i] });
-    labels[i] = { ...label(loss, isTop, mated, i >= 2 ? swingOf(ev[i - 2], ev[i - 1]) : 0, mateFor, brill), sac, loss, swing: i >= 2 ? swingOf(ev[i - 2], ev[i - 1]) : 0 };
+  const mk = () => {
+    const labels = [];
+    for (let i = 1; i < n; i++) {
+      const m = game.positions[i].move, isTop = toUCI(m) === best[i - 1];
+      const mated = ev[i].mate === 0;
+      const loss = mated ? 0 : moveLoss(ev[i - 1], ev[i]);
+      const mateFor = ev[i - 1].mate !== undefined && ev[i - 1].mate > 0;
+      const sw = i >= 2 ? swingOf(ev[i - 2], ev[i - 1]) : 0;
+      const sac = mated ? 0 : sacrificeCp(game.positions[i - 1].state, m), brill = !mated && isBrilliant({ loss, isTop, sac, evBefore: ev[i - 1], evAfter: ev[i] });
+      labels[i] = { ...label(loss, isTop, mated, sw, mateFor, brill), sac, loss, swing: sw };
+    }
+    return labels;
+  };
+  let labels = mk();
+  // A shallow search can misjudge a position (seen on the Opera Game). Re-search every position behind a suspected error (loss of 0.80+) deeper, then relabel.
+  const redo = new Set();
+  labels.forEach((l, i) => { if (l && l.loss >= 80) { redo.add(i - 1); redo.add(i); } });
+  let k = 0;
+  for (const j of [...redo].sort((x, y) => x - y)) {
+    el.innerHTML = `<p>Re-checking suspected errors deeper ${++k} / ${redo.size}…</p>`;
+    const st = game.positions[j].state;
+    if (!legalMoves(st).length) continue;
+    const r = await SF.search(toFEN(st), { depth: DEEP }); ev[j] = r; best[j] = r.best;
   }
+  if (redo.size) labels = mk();
   evals = { ev, best, labels }; busy = false; delete el.dataset.lock; buildMoves(); render();
 }
 function why() {
