@@ -63,7 +63,7 @@ test("labels: great needs top move plus a swing or mate; excellent tier", () => 
 });
 test("arabic explanation uses engine numbers, best move and reply", () => {
   const txt = explainAr({ lb: { key: "blun" }, loss: 320, evBefore: { cp: 40 }, evAfter: { cp: 300 }, bestSan: "Nf3", replySan: "Qxd5", replyCaptures: "q", moveCaptures: "" });
-  assert.match(txt, /غلطة كبيرة/); assert.match(txt, /Nf3/); assert.match(txt, /Qxd5/); assert.match(txt, /وزير/); assert.match(txt, /٣٫٢٠|٣\.٢٠/);
+  assert.match(txt, /غلطة كبيرة/); assert.match(txt, /Nf3/); assert.match(txt, /Qxd5/); assert.match(txt, /وزير/); assert.match(txt, /٣\.٢٠/);
 });
 test("arabic: missed mate and allowed mate are named", () => {
   assert.match(explainAr({ lb: { key: "blun" }, loss: 900, evBefore: { mate: 2 }, evAfter: { cp: 50 }, bestSan: "Qh7#" }), /مات إجباري/);
