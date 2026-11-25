@@ -70,3 +70,8 @@ test("arabic: missed mate and allowed mate are named", () => {
   assert.match(explainAr({ lb: { key: "blun" }, loss: 900, evBefore: { cp: 0 }, evAfter: { mate: 2 }, bestSan: "a3" }), /بتسمح للخصم بمات/);
   assert.equal(scoreAr({ mate: 3 }, -1), "مات ضدك في ٣");
 });
+
+test("arabic: scores and SAN are isolated LTR so the minus sign stays in front", () => {
+  const txt = explainAr({ lb: { key: "mist" }, loss: 137, evBefore: { cp: -664 }, evAfter: { cp: 801 }, bestSan: "Qc5", replySan: "Bxf6+", replyCaptures: "n" });
+  assert.match(txt, /<bdi dir="ltr">\u22126\.64<\/bdi>/); assert.match(txt, /<bdi dir="ltr">Bxf6\+<\/bdi>/); assert.match(txt, /<bdi dir="ltr">\u22128\.01<\/bdi>/);
+});
