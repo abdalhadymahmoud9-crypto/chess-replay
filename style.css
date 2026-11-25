@@ -107,3 +107,6 @@ footer{margin-top:30px;color:var(--mute);font-size:.8rem}footer a{color:var(--ac
 #evalmode.eng b{color:#7fd6a4}#evalmode.eng{border-color:rgba(127,214,164,.45)}
 #evalmode span{flex-basis:100%;opacity:.85}
 @media(max-width:600px){#evalmode{margin-left:14px;margin-right:14px}}
+#evalmode.wait b{color:#9ec5ff}
+#evalmode button{margin-inline-start:auto;font:inherit;font-size:.76rem;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:inherit;cursor:pointer}
+#evalmode button:hover{background:rgba(255,255,255,.12)}
