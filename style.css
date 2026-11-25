@@ -100,3 +100,10 @@ footer{margin-top:30px;color:var(--mute);font-size:.8rem}footer a{color:var(--ac
   .controls{justify-content:center}
   .layout{gap:16px}
 }
+
+#evalmode{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.78rem;margin:0 0 10px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);color:var(--mute,#9aa7bb);background:var(--bg2)}
+#evalmode b{font-weight:700;letter-spacing:.02em}
+#evalmode.mat b{color:#f0b04a}#evalmode.mat{border-style:dashed}
+#evalmode.eng b{color:#7fd6a4}#evalmode.eng{border-color:rgba(127,214,164,.45)}
+#evalmode span{flex-basis:100%;opacity:.85}
+@media(max-width:600px){#evalmode{margin-left:14px;margin-right:14px}}
