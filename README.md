@@ -1,17 +1,13 @@
-# Chess Replay
+# Chess Studio
 
-Paste a PGN and step through the game on a board, with a note field for every move. Comes with Morphy's "Opera Game" as a sample. Notes are saved in your browser per game. Arrow keys step through moves.
+Review a game, get engine-based move feedback, or play (against Stockfish, or a friend on the same device). Runs in the browser. Built with AI assistance.
 
-## Run / test
-`python3 -m http.server`, open http://localhost:8000. Tests: `npm test` (Node 18+).
+Live: https://abdalhadymahmoud9-crypto.github.io/chess-replay/
 
-## How it works
-- `engine.js`: a small rules engine (legal moves, check, castling, en passant, promotion) used to turn PGN move text (SAN) into positions. Illegal or unreadable moves are reported instead of guessed.
-- `app.js`: board drawing, controls, notes.
-- `engine.test.js`: tests, including a full replay of the Opera Game to checkmate.
+- Rules: castling, en passant, promotion, check, checkmate, stalemate, insufficient material, threefold repetition, fifty-move rule. Tests: `node --test`.
+- Engine: Stockfish 19 lite (single thread), downloaded only when you click Analyze or Play, with the exact size shown first (1.87 MB).
+- Move labels (Solid, Inaccuracy, Mistake, Blunder) come from the change in engine score at the shown depth. They are a heuristic, not a human verdict.
+- Optional Google sign-in syncs notes and saved games across devices.
+- No online multiplayer.
 
-## Limits
-PGN comments and variations are ignored, not shown. No engine analysis. Only the main line of one game is loaded. Draw rules (repetition, 50 moves) are not tracked.
-
-## Credits
-Built with AI assistance.
+Licence: GPL-3.0, see `LICENSE` and `NOTICE.md`.
