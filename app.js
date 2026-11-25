@@ -181,7 +181,7 @@ function pgnOf() {
   return `[Event "${h.Event || "Casual game"}"]\n[White "${h.White || "White"}"]\n[Black "${h.Black || "Black"}"]\n[Result "${r}"]\n\n${mv}${r}`;
 }
 function games() {
-  const g = read(GAMES), ids = Object.keys(g);
+  const g = read(GAMES), ids = Object.keys(g).filter((id) => g[id] && g[id].title);
   $("#games").innerHTML = ids.length ? "<h2>Saved games</h2>" + ids.map((id) => `<div class="g"><button data-gid="${id}" class="ghost">${g[id].title}</button><button data-del="${id}" class="ghost" aria-label="Delete">✕</button></div>`).join("") : "";
 }
 $("#load").onclick = () => { if ($("#pgn").value.trim()) { setMode("review").then?.(); load($("#pgn").value); } };
