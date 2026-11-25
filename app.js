@@ -45,6 +45,16 @@ function render() {
     html += `<button class="${cls}" data-sq="${i}" aria-label="${name(i)}${p ? " " + p : ""}${bd && move && i === move.to ? ", " + bd[1] + " move" : ""}">${col}${fl}${p ? svg(p) : ""}${bd && move && i === move.to ? `<span class="badge bg-${cur.key}" aria-hidden="true">${bd[0]}</span>` : ""}</button>`;
   }
   $("#board").innerHTML = html;
+  { // evaluation bar: White's share of the bar from the engine score at this position (only after Analyze)
+    const bar = $("#evalbar"), e = evals && evals.ev[ply];
+    bar.classList.toggle("off", !e); bar.classList.toggle("flip", flipped);
+    if (e) {
+      const t = state.turn, cp = e.mate !== undefined ? (e.mate === 0 ? (t === "w" ? -1 : 1) * 1500 : (t === "w" ? 1 : -1) * Math.sign(e.mate) * 1500) : (t === "w" ? 1 : -1) * Math.max(-1500, Math.min(1500, e.cp));
+      $("#evalfill").style.height = (100 / (1 + Math.exp(-cp / 320))).toFixed(1) + "%";
+      $("#evaltxt").textContent = e.mate === 0 ? "#" : show(e, t).replace("White mates in ", "M").replace("Black mates in ", "-M").replace(/^\+/, "");
+      bar.dataset.score = show(e, t); bar.setAttribute("aria-label", "Evaluation " + show(e, t) + " (White's view)");
+    } else { $("#evalfill").style.height = "50%"; $("#evaltxt").textContent = ""; bar.setAttribute("aria-label", "Evaluation bar, analyze the game to fill it"); }
+  }
   document.querySelectorAll("#moves button").forEach((b) => b.classList.toggle("cur", Number(b.dataset.ply) === ply));
   const c = $("#moves .cur"); if (c) c.scrollIntoView({ block: "nearest" });
   $("#counter").textContent = `${ply} / ${game.sans.length}`;
