@@ -1,7 +1,7 @@
 import { replay, name, sq, legalMoves, apply, toSAN, toUCI, toFEN, fromFEN, START_FEN, gameStatus } from "./engine.js";
 import { OPERA } from "./sample.js";
 import { svg } from "./pieces.js";
-import { value, moveLoss, label, show } from "./analysis.js";
+import { value, moveLoss, label, show, clamp, swingOf, explainAr } from "./analysis.js";
 import * as SF from "./sf.js";
 
 const $ = (s) => document.querySelector(s);
@@ -82,7 +82,9 @@ async function analyze() {
   for (let i = 1; i < n; i++) {
     const m = game.positions[i].move, isTop = toUCI(m) === best[i - 1];
     const mated = ev[i].mate === 0;
-    labels[i] = { ...label(mated ? 0 : moveLoss(ev[i - 1], ev[i]), isTop, mated), loss: mated ? 0 : moveLoss(ev[i - 1], ev[i]) };
+    const loss = mated ? 0 : moveLoss(ev[i - 1], ev[i]);
+    const mateFor = ev[i - 1].mate !== undefined && ev[i - 1].mate > 0;
+    labels[i] = { ...label(loss, isTop, mated, i >= 2 ? swingOf(ev[i - 2], ev[i - 1]) : 0, mateFor), loss, swing: i >= 2 ? swingOf(ev[i - 2], ev[i - 1]) : 0 };
   }
   evals = { ev, best, labels }; busy = false; delete el.dataset.lock; buildMoves(); render();
 }
@@ -93,7 +95,14 @@ function why() {
   let alt = "";
   if (bu && !lb.key.match(/top|mate/)) { const bm = legalMoves(prev).find((m) => toUCI(m) === bu); if (bm) alt = ` The engine preferred <b>${toSAN(prev, bm)}</b> here.`; }
   const sc = e.mate === 0 ? "Checkmate" : show(e, game.positions[ply].state.turn);
-  el.innerHTML = `<p><span class="tag t-${lb.key}">${lb.text}</span> ${game.sans[ply - 1]}. Evaluation after the move: <b>${sc}</b> (White's view${e.depth ? `, depth ${e.depth}` : ""}).${alt}${lb.key === "top" || lb.key === "mate" ? "" : ` Estimated loss about ${(lb.loss / 100).toFixed(2)} pawns.`}</p>`;
+  let ex = "";
+  if (!lb.key.match(/mate/) || true) {
+    const st = game.positions[ply].state, mv = game.positions[ply].move;
+    const bm = bu && legalMoves(prev).find((m) => toUCI(m) === bu), rb = evals.best[ply], rm = rb && legalMoves(st).find((m) => toUCI(m) === rb);
+    const capOf = (state, m) => (m && state.board[m.to] ? state.board[m.to] : "");
+    ex = `<p dir="rtl" lang="ar" class="ar">${explainAr({ lb, loss: lb.loss, swing: lb.swing || 0, evBefore: evals.ev[ply - 1], evAfter: e, bestSan: bm && !lb.key.match(/top|great|mate/) ? toSAN(prev, bm) : "", replySan: rm && !lb.key.match(/top|great|mate|exc|good/) ? toSAN(st, rm) : "", replyCaptures: capOf(st, rm), moveCaptures: capOf(prev, mv) })}</p>`;
+  }
+  el.innerHTML = ex + `<p><span class="tag t-${lb.key}">${lb.text}</span> ${game.sans[ply - 1]}. Evaluation after the move: <b>${sc}</b> (White's view${e.depth ? `, depth ${e.depth}` : ""}).${alt}${lb.key === "top" || lb.key === "mate" ? "" : ` Estimated loss about ${(lb.loss / 100).toFixed(2)} pawns.`}</p>`;
 }
 
 // ---- play ----
