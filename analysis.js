@@ -32,7 +32,7 @@ const ar = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 // s is a score from the side to move's view; sign=+1 when that side is the mover, -1 otherwise. Output is from the mover's view.
 export function scoreAr(s, sign) {
   if (s.mate !== undefined) { const m = s.mate * sign; return m === 0 ? "مات" : m > 0 ? `مات لصالحك في ${ar(Math.abs(m))}` : `مات ضدك في ${ar(Math.abs(m))}`; }
-  const v = (s.cp * sign) / 100; return (v > 0 ? "+" : "") + ar(v.toFixed(2));
+  const v = (s.cp * sign) / 100; return "\u2066" + (v > 0 ? "+" : v < 0 ? "-" : "") + ar(Math.abs(v).toFixed(2)) + "\u2069";
 }
 // info: { lb, loss, evBefore, evAfter, bestSan, replySan, replyCaptures (piece char or ""), moveCaptures (piece char or ""), swing }
 export function explainAr(info) {
