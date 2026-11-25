@@ -60,6 +60,8 @@ function render() {
       $("#evaltxt").textContent = m === 0 ? "=" : (m > 0 ? "+" : "") + m;
       bar.dataset.score = ""; bar.setAttribute("aria-label", "Material balance " + (m > 0 ? "+" : "") + m + " (White's view). Analyze the game for the engine score");
     }
+    { const em = $("#evalmode"); em.className = e ? "eng" : "mat";
+      em.innerHTML = e ? `<b>Engine evaluation</b> <bdi dir="rtl">تقييم المحرك</bdi>` : `<b>Material only</b> <bdi dir="rtl">عدد القطع فقط</bdi> <span>Not an engine score. Press Analyze (right) for the real evaluation. <bdi dir="rtl">اضغط Analyze للتقييم الحقيقي</bdi></span>`; }
     bar.title = e ? "Engine evaluation (White's view)" : "Material count only. Press Analyze for the engine score.";
   }
   document.querySelectorAll("#moves button").forEach((b) => b.classList.toggle("cur", Number(b.dataset.ply) === ply));
