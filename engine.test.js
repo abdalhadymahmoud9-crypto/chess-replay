@@ -1,0 +1,39 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { replay, fromFEN, START_FEN, legalMoves, inCheck, sq, parsePGN } from "./engine.js";
+
+const OPERA = `[Event "Paris"][White "Morphy"][Black "Duke of Brunswick and Count Isouard"][Result "1-0"]
+1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0`;
+
+test("start position has 20 legal moves", () => assert.equal(legalMoves(fromFEN(START_FEN)).length, 20));
+test("Opera Game replays to checkmate with matching SAN", () => {
+  const g = replay(OPERA);
+  assert.equal(g.sans.length, 33);
+  assert.equal(g.sans.at(-1), "Rd8#");
+  const last = g.positions.at(-1).state;
+  assert.equal(inCheck(last), true);
+  assert.equal(legalMoves(last).length, 0);
+});
+test("castling moves both king and rook", () => {
+  const g = replay(OPERA);
+  const s = g.positions[23].state; // after 12.O-O-O (ply 23)
+  assert.equal(s.board[sq("c1")], "K"); assert.equal(s.board[sq("d1")], "R");
+});
+test("en passant removes the captured pawn", () => {
+  const g = replay("1. e4 a6 2. e5 d5 3. exd6");
+  const s = g.positions.at(-1).state;
+  assert.equal(s.board[sq("d5")], ""); assert.equal(s.board[sq("d6")], "P");
+});
+test("promotion", () => {
+  const g = replay("1. a4 b5 2. axb5 a6 3. bxa6 Nc6 4. a7 Nb8 5. axb8=Q");
+  assert.equal(g.positions.at(-1).state.board[sq("b8")], "Q");
+  assert.equal(g.sans.at(-1), "axb8=Q");
+});
+test("comments, variations and NAGs are ignored", () => {
+  const p = parsePGN("1. e4 {best by test} e5 (1... c5 2. Nf3) 2. Nf3 $1 *");
+  assert.deepEqual(p.tokens, ["e4", "e5", "Nf3"]);
+});
+test("illegal move throws", () => {
+  assert.throws(() => replay("1. e5"), /Illegal/);
+  assert.throws(() => replay("1. e4 e5 2. Ke3"), /Illegal/);
+});
