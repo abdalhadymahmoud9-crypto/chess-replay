@@ -43,7 +43,7 @@ import { gameStatus, toFEN, fromFEN as ff, START_FEN as SF, toUCI } from "./engi
 test("loss: mate missed is a blunder, mover view", () => {
   assert.ok(moveLoss({ mate: 2 }, { cp: 50 }) > 200); // had mate in 2, opponent (stm) now sees +50 for themselves
   assert.equal(moveLoss({ cp: 30 }, { cp: -30 }), 0);
-  assert.equal(label(0, false, false).key, "good");
+  assert.equal(label(20, false, false).key, "good");
   assert.equal(show({ mate: 3 }, "b"), "Black mates in 3");
 });
 test("status: stalemate, insufficient material, FEN round trip", () => {
@@ -51,4 +51,22 @@ test("status: stalemate, insufficient material, FEN round trip", () => {
   assert.equal(gameStatus([{ state: st, move: null }]).reason, "Stalemate");
   assert.equal(gameStatus([{ state: ff("8/8/8/4k3/8/8/3K4/8 w - -"), move: null }]).reason, "Insufficient material");
   assert.equal(toFEN(ff(SF)).split(" ")[0], SF.split(" ")[0]);
+});
+
+import { explainAr, scoreAr } from "./analysis.js";
+test("labels: great needs top move plus a swing or mate; excellent tier", () => {
+  assert.equal(label(0, true, false, 200).key, "great");
+  assert.equal(label(0, true, false, 20).key, "top");
+  assert.equal(label(0, true, false, 0, true).key, "great");
+  assert.equal(label(5, false, false).key, "exc");
+  assert.equal(label(250, false, false).key, "blun");
+});
+test("arabic explanation uses engine numbers, best move and reply", () => {
+  const txt = explainAr({ lb: { key: "blun" }, loss: 320, evBefore: { cp: 40 }, evAfter: { cp: 300 }, bestSan: "Nf3", replySan: "Qxd5", replyCaptures: "q", moveCaptures: "" });
+  assert.match(txt, /غلطة كبيرة/); assert.match(txt, /Nf3/); assert.match(txt, /Qxd5/); assert.match(txt, /وزير/); assert.match(txt, /٣٫٢٠|٣\.٢٠/);
+});
+test("arabic: missed mate and allowed mate are named", () => {
+  assert.match(explainAr({ lb: { key: "blun" }, loss: 900, evBefore: { mate: 2 }, evAfter: { cp: 50 }, bestSan: "Qh7#" }), /مات إجباري/);
+  assert.match(explainAr({ lb: { key: "blun" }, loss: 900, evBefore: { cp: 0 }, evAfter: { mate: 2 }, bestSan: "a3" }), /بتسمح للخصم بمات/);
+  assert.equal(scoreAr({ mate: 3 }, -1), "مات ضدك في ٣");
 });
